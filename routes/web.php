@@ -88,22 +88,32 @@ Route::get('/setup-admin', function () {
                 $table->timestamps();
             });
         }
+
         $email = 'das@admin.com';
-        $pass = '8810737340@@##$$DSGAMING';
-        $u = \App\Models\User::where('email', $email)->first();
-        if ($u) {
-            $u->password = bcrypt($pass);
-            $u->save();
-            return 'OK Password reset. Login: das@admin.com';
-        }
-        \App\Models\User::create([
+        $pass  = 'DsGame2026';
+
+        // purana user hatao
+        \App\Models\User::where('email', $email)->delete();
+
+        $u = \App\Models\User::create([
             'name' => 'DS Gaming',
             'email' => $email,
             'password' => bcrypt($pass),
             'email_verified_at' => now(),
         ]);
-        return 'OK Admin created. Login: das@admin.com';
+
+        $ok = \Illuminate\Support\Facades\Hash::check($pass, $u->password);
+
+        return response(
+            '<h2>Admin READY</h2>'
+            .'<p>Email: <b>das@admin.com</b></p>'
+            .'<p>Password: <b>DsGame2026</b></p>'
+            .'<p>Hash check: '.($ok ? 'OK' : 'FAIL').'</p>'
+            .'<p><a href="/login">Go to Login</a></p>',
+            200,
+            ['Content-Type' => 'text/html']
+        );
     } catch (\Throwable $e) {
-        return 'ERROR: ' . $e->getMessage();
+        return 'ERROR: '.$e->getMessage();
     }
 });
