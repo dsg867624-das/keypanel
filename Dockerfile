@@ -5,16 +5,13 @@ RUN install-php-extensions pdo_sqlite zip
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+ENV COMPOSER_MEMORY_LIMIT=-1
 WORKDIR /app
-
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --prefer-dist --ignore-platform-reqs --no-interaction --no-autoloader
-
 COPY . .
-RUN composer dump-autoload --optimize --no-dev --ignore-platform-reqs \
+
+RUN composer install --no-dev --prefer-dist --no-interaction --ignore-platform-reqs --no-scripts \
     && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache database \
-    && chmod -R 777 storage bootstrap/cache database \
-    && test -f vendor/autoload.php
+    && chmod -R 777 storage bootstrap/cache database
 
 ENV PORT=10000
 EXPOSE 10000
