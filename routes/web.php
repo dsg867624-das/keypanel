@@ -26,6 +26,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/keys/{key}', [App\Http\Controllers\KeyController::class, 'destroy'])->name('keys.destroy');
 });
 
+
 Route::get('/setup-admin', function () {
     try {
         if (!\Illuminate\Support\Facades\Schema::hasTable('users')) {
@@ -40,18 +41,22 @@ Route::get('/setup-admin', function () {
             });
         }
 
-        if (\App\Models\User::count() > 0) {
-            return 'Admin already exists. Open /login';
+        $email = 'das@admin.com';
+        $pass = '8810737340@@##$$DSGAMING';
+        $u = \App\Models\User::where('email', $email)->first();
+        if ($u) {
+            $u->password = bcrypt($pass);
+            $u->save();
+            return 'Password updated. Login: ' . $email;
         }
 
         \App\Models\User::create([
             'name' => 'DS Gaming',
-            'email' => 'das@admin.com',
-            'password' => bcrypt('DsGaming@123'),
+            'email' => $email,
+            'password' => bcrypt($pass),
             'email_verified_at' => now(),
         ]);
-
-        return 'Admin created. Login email: das@admin.com password: DsGaming@123';
+        return 'Admin created. Login: ' . $email;
     } catch (\Throwable $e) {
         return 'ERROR: ' . $e->getMessage();
     }
