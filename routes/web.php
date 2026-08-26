@@ -62,42 +62,6 @@ Route::get('/setup-admin', function () {
     }
 });
 
-Route::middleware('auth')->get('/make-user', function () {
-    return '<!doctype html><html><body style="font-family:sans-serif;max-width:420px;margin:40px auto">
-    <h2>Create User / Password</h2>
-    <form method="post" action="/make-user">
-      <input type="hidden" name="_token" value="'.csrf_token().'">
-      <p>Username<br><input name="username" required style="width:100%;padding:8px"></p>
-      <p>Password<br><input name="password" type="password" required style="width:100%;padding:8px"></p>
-      <button type="submit">Create</button>
-    </form>
-    <p><a href="/keys">Back to keys</a></p>
-    </body></html>';
-});
-
-Route::middleware('auth')->post('/make-user', function (\Illuminate\Http\Request $request) {
-    $user = trim((string) $request->input('username'));
-    $pass = (string) $request->input('password');
-    if ($user === '' || $pass === '') {
-        return 'Username/password empty';
-    }
-    if (!\Illuminate\Support\Facades\Schema::hasTable('keys')) {
-        return redirect('/api/key-check');
-    }
-    if (!\Illuminate\Support\Facades\Schema::hasColumn('keys', 'username')) {
-        \Illuminate\Support\Facades\Schema::table('keys', function ($t) {
-            $t->string('username')->nullable();
-            $t->string('password')->nullable();
-        });
-    }
-    $row = new \App\Models\Key();
-    $row->key = strtoupper(substr(md5($user.time()), 0, 4).'-'.substr(md5($user), 0, 4).'-USER-PASS');
-    $row->username = $user;
-    $row->password = \Illuminate\Support\Facades\Hash::make($pass);
-    $row->status = 'active';
-    $row->save();
-    return 'Created user: '.$user.' — now use this USER + PASS in app. <a href="/make-user">Add another</a> | <a href="/keys">Keys</a>';
-});
 
 Route::get('/setup-admin', function () {
     try {
@@ -130,4 +94,49 @@ Route::get('/setup-admin', function () {
     } catch (\Throwable $e) {
         return 'ERROR: ' . $e->getMessage();
     }
+});
+
+Route::middleware('auth')->get('/make-user', function () {
+    return '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Create User</title></head>
+    <body style="font-family:sans-serif;max-width:420px;margin:40px auto;padding:12px">
+    <h2>Create User / Password</h2>
+    <form method="post" action="/make-user">
+      <input type="hidden" name="_token" value="'.csrf_token().'">
+      <p>Username<br><input name="username" required style="width:100%;padding:8px"></p>
+      <p>Password<br><input name="password" type="password" required style="width:100%;padding:8px"></p>
+      <p>Max uses (0 = unlimited)<br>
+         <input name="max_uses" type="number" value="0" min="0" max="999999" style="width:100%;padding:8px"></p>
+      <button type="submit" style="padding:10px 16px;margin-top:8px">Create</button>
+    </form>
+    <p style="margin-top:16px"><a href="/keys">Back to keys</a></p>
+    </body></html>';
+});
+
+Route::middleware('auth')->post('/make-user', function (\Illuminate\Http\Request $request) {
+    $user = trim((string) $request->input('username'));
+    $pass = (string) $request->input('password');
+    $max  = (int) $request->input('max_uses', 0);
+    if ($user === '' || $pass === '') {
+        return 'Username/password empty';
+    }
+    if (!\Illuminate\Support\Facades\Schema::hasTable('keys')) {
+        return 'keys table missing — open /api/key-check once then retry';
+    }
+    if (!\Illuminate\Support\Facades\Schema::hasColumn('keys', 'username')) {
+        \Illuminate\Support\Facades\Schema::table('keys', function ($t) {
+            $t->string('username')->nullable();
+            $t->string('password')->nullable();
+        });
+    }
+    $row = new \App\Models\Key();
+    $row->key = strtoupper(substr(md5($user.time()), 0, 4).'-'.substr(md5($user), 0, 4).'-USER-PASS');
+    $row->username = $user;
+    $row->password = \Illuminate\Support\Facades\Hash::make($pass);
+    $row->status = 'active';
+    $row->max_uses = $max; // 0 = unlimited
+    $row->used_count = 0;
+    $row->save();
+    $lim = $max === 0 ? 'unlimited' : (string)$max;
+    return 'Created user: '.$user.' (max uses: '.$lim.') — use USER+PASS in app. <a href="/make-user">Add another</a> | <a href="/keys">Keys</a>';
 });
