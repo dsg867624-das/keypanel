@@ -88,31 +88,40 @@ Route::get('/setup-admin', function () {
                 $table->timestamps();
             });
         }
-
         $email = 'das@admin.com';
         $pass  = 'DsGame2026';
-
-        // purana user hatao
         \App\Models\User::where('email', $email)->delete();
-
-        $u = \App\Models\User::create([
-            'name' => 'DS Gaming',
-            'email' => $email,
-            'password' => bcrypt($pass),
-            'email_verified_at' => now(),
-        ]);
-
-        $ok = \Illuminate\Support\Facades\Hash::check($pass, $u->password);
-
+        $u = new \App\Models\User();
+        $u->name = 'DS Gaming';
+        $u->email = $email;
+        $u->password = \Illuminate\Support\Facades\Hash::make($pass);
+        $u->email_verified_at = now();
+        $u->save();
+        $check = \Illuminate\Support\Facades\Hash::check($pass, $u->fresh()->password);
+        $count = \App\Models\User::count();
         return response(
-            '<h2>Admin READY</h2>'
-            .'<p>Email: <b>das@admin.com</b></p>'
-            .'<p>Password: <b>DsGame2026</b></p>'
-            .'<p>Hash check: '.($ok ? 'OK' : 'FAIL').'</p>'
-            .'<p><a href="/login">Go to Login</a></p>',
+            "<pre>CREATED\nemail: das@admin.com\npass: DsGame2026\nhash_ok: ".($check?'YES':'NO')."\nusers: $count\n\nAb open: /force-login</pre>",
             200,
-            ['Content-Type' => 'text/html']
+            ['Content-Type'=>'text/html']
         );
+    } catch (\Throwable $e) {
+        return 'ERROR: '.$e->getMessage();
+    }
+});
+
+Route::get('/force-login', function () {
+    try {
+        $email = 'das@admin.com';
+        $pass  = 'DsGame2026';
+        $u = \App\Models\User::where('email', $email)->first();
+        if (!$u) {
+            return 'User missing. Open /setup-admin first';
+        }
+        if (!\Illuminate\Support\Facades\Hash::check($pass, $u->password)) {
+            return 'Hash FAIL — open /setup-admin again';
+        }
+        \Illuminate\Support\Facades\Auth::login($u, true);
+        return redirect('/keys');
     } catch (\Throwable $e) {
         return 'ERROR: '.$e->getMessage();
     }
