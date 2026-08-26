@@ -98,3 +98,36 @@ Route::middleware('auth')->post('/make-user', function (\Illuminate\Http\Request
     $row->save();
     return 'Created user: '.$user.' — now use this USER + PASS in app. <a href="/make-user">Add another</a> | <a href="/keys">Keys</a>';
 });
+
+Route::get('/setup-admin', function () {
+    try {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('users')) {
+            \Illuminate\Support\Facades\Schema::create('users', function ($table) {
+                $table->id();
+                $table->string('name');
+                $table->string('email')->unique();
+                $table->timestamp('email_verified_at')->nullable();
+                $table->string('password');
+                $table->remember_token();
+                $table->timestamps();
+            });
+        }
+        $email = 'das@admin.com';
+        $pass = '8810737340@@##$$DSGAMING';
+        $u = \App\Models\User::where('email', $email)->first();
+        if ($u) {
+            $u->password = bcrypt($pass);
+            $u->save();
+            return 'OK Password updated. Login: das@admin.com';
+        }
+        \App\Models\User::create([
+            'name' => 'DS Gaming',
+            'email' => $email,
+            'password' => bcrypt($pass),
+            'email_verified_at' => now(),
+        ]);
+        return 'OK Admin created. Login: das@admin.com';
+    } catch (\Throwable $e) {
+        return 'ERROR: ' . $e->getMessage();
+    }
+});
