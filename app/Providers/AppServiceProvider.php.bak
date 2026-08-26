@@ -1,0 +1,42 @@
+<?php
+
+namespace App\Providers;
+
+use App\Helpers\ActivityLogger;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\ServiceProvider;
+
+class AppServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        //
+    }
+
+    public function boot(): void
+    {
+        // Login successful
+        Event::listen(Login::class, function (Login $event) {
+            ActivityLogger::log('login', [
+                'email' => $event->user->email ?? null,
+            ]);
+        });
+
+        // Logout
+        Event::listen(Logout::class, function (Logout $event) {
+            ActivityLogger::log('logout', [
+                'email' => $event->user->email ?? null,
+            ]);
+        });
+
+        // Failed Login
+        Event::listen(Failed::class, function (Failed $event) {
+            ActivityLogger::log('failed_login', [
+                'email' => $event->credentials['email'] ?? null,
+            ]);
+        });
+    }
+}

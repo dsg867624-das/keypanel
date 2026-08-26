@@ -1,0 +1,61 @@
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Profile') }}
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+                <div class="max-w-xl">
+                    @include('profile.partials.update-profile-information-form')
+                </div>
+            </div>
+
+            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+    <div class="max-w-xl">
+        <h2 class="text-lg font-medium text-gray-900">
+            {{ __('Two-Factor Authentication') }}
+        </h2>
+
+        <p class="mt-1 text-sm text-gray-600">
+            {{ __('Add extra security to your admin account with two-factor authentication.') }}
+        </p>
+
+        @if (!auth()->user()->two_factor_secret)
+            <form method="POST" action="{{ url('/user/two-factor-authentication') }}" class="mt-6">
+                @csrf
+
+                <button type="submit"
+                    class="px-4 py-2 bg-gray-800 text-white rounded-md">
+                    {{ __('Enable 2FA') }}
+                </button>
+            </form>
+        @else
+            <p class="mt-4 text-sm text-green-600">
+                {{ __('Two-factor authentication is enabled.') }}
+            </p>
+
+            <form method="POST" action="{{ url('/user/two-factor-authentication') }}" class="mt-4">
+                @csrf
+                @method('DELETE')
+
+                <button type="submit"
+                    class="px-4 py-2 bg-red-600 text-white rounded-md">
+                    {{ __('Disable 2FA') }}
+                </button>
+            </form>
+        @endif
+    </div>
+</div>
+
+            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+                <div class="max-w-xl">
+                    @include('profile.partials.delete-user-form')
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
+
