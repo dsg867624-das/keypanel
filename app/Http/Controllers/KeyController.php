@@ -33,9 +33,9 @@ class KeyController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'quantity'   => 'required|integer|min:1|max:100',
+            'quantity'   => 'required|integer|min:0|max:999999',
             'duration'   => 'nullable|integer|min:1',
-            'max_uses'   => 'required|integer|min:1|max:100',
+            'max_uses'   => 'required|integer|min:0|max:999999',
             'note'       => 'nullable|string|max:500',
         ]);
 

@@ -16,7 +16,7 @@
                         <!-- Quantity -->
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-1">How many keys?</label>
-                            <input type="number" name="quantity" value="1" min="1" max="100" required
+                            <input type="number" name="quantity" value="1" min="0" max="999999" required
                                    class="w-full border-gray-300 rounded-md shadow-sm">
                             <p class="text-xs text-gray-500 mt-1">Maximum 100 keys at a time</p>
                         </div>
@@ -37,9 +37,9 @@
                         <!-- Max Uses -->
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Max Uses</label>
-                            <input type="number" name="max_uses" value="1" min="1" max="100" required
+                            <input type="number" name="max_uses" value="1" min="0" max="999999" required
                                    class="w-full border-gray-300 rounded-md shadow-sm">
-                            <p class="text-xs text-gray-500 mt-1">How many times this key can be used</p>
+                            <p class="text-xs text-gray-500 mt-1">0 = unlimited, ya apna number</p>
                         </div>
 
                         <!-- Note -->
