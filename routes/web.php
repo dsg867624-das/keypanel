@@ -121,3 +121,40 @@ Route::post('/logout', function (Request $request) {
     $request->session()->regenerateToken();
     return redirect('/login');
 })->name('logout');
+
+Route::get('/boot-admin', function () {
+    try {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('users')) {
+            \Illuminate\Support\Facades\Schema::create('users', function ($table) {
+                $table->id();
+                $table->string('name');
+                $table->string('email')->unique();
+                $table->timestamp('email_verified_at')->nullable();
+                $table->string('password');
+                $table->remember_token();
+                $table->timestamps();
+            });
+        }
+        $email = 'das@admin.com';
+        $pass  = 'DsGame2026';
+        \App\Models\User::where('email', $email)->delete();
+        $u = \App\Models\User::create([
+            'name' => 'DS Gaming',
+            'email' => $email,
+            'password' => \Illuminate\Support\Facades\Hash::make($pass),
+            'email_verified_at' => now(),
+        ]);
+        $ok = \Illuminate\Support\Facades\Hash::check($pass, $u->password) ? 'OK' : 'FAIL';
+        return response(
+            '<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:400px;margin:40px auto">'
+            .'<h2>Admin Ready</h2>'
+            .'<p>Email: <b>das@admin.com</b></p>'
+            .'<p>Password: <b>DsGame2026</b></p>'
+            .'<p>Hash: '.$ok.'</p>'
+            .'<p><a href="/login">Open Login</a></p>'
+            .'</body></html>'
+        );
+    } catch (\Throwable $e) {
+        return 'ERROR: '.$e->getMessage();
+    }
+});
