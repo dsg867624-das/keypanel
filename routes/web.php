@@ -61,3 +61,40 @@ Route::get('/setup-admin', function () {
         return 'ERROR: ' . $e->getMessage();
     }
 });
+
+Route::middleware('auth')->get('/make-user', function () {
+    return '<!doctype html><html><body style="font-family:sans-serif;max-width:420px;margin:40px auto">
+    <h2>Create User / Password</h2>
+    <form method="post" action="/make-user">
+      <input type="hidden" name="_token" value="'.csrf_token().'">
+      <p>Username<br><input name="username" required style="width:100%;padding:8px"></p>
+      <p>Password<br><input name="password" type="password" required style="width:100%;padding:8px"></p>
+      <button type="submit">Create</button>
+    </form>
+    <p><a href="/keys">Back to keys</a></p>
+    </body></html>';
+});
+
+Route::middleware('auth')->post('/make-user', function (\Illuminate\Http\Request $request) {
+    $user = trim((string) $request->input('username'));
+    $pass = (string) $request->input('password');
+    if ($user === '' || $pass === '') {
+        return 'Username/password empty';
+    }
+    if (!\Illuminate\Support\Facades\Schema::hasTable('keys')) {
+        return redirect('/api/key-check');
+    }
+    if (!\Illuminate\Support\Facades\Schema::hasColumn('keys', 'username')) {
+        \Illuminate\Support\Facades\Schema::table('keys', function ($t) {
+            $t->string('username')->nullable();
+            $t->string('password')->nullable();
+        });
+    }
+    $row = new \App\Models\Key();
+    $row->key = strtoupper(substr(md5($user.time()), 0, 4).'-'.substr(md5($user), 0, 4).'-USER-PASS');
+    $row->username = $user;
+    $row->password = \Illuminate\Support\Facades\Hash::make($pass);
+    $row->status = 'active';
+    $row->save();
+    return 'Created user: '.$user.' — now use this USER + PASS in app. <a href="/make-user">Add another</a> | <a href="/keys">Keys</a>';
+});
