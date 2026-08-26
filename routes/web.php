@@ -103,17 +103,6 @@ Route::get('/login', function () {
     );
 })->middleware('guest')->name('login');
 
-Route::post('/do-login', function (Request $request) {
-    $email = trim((string) $request->input('email'));
-    $pass  = (string) $request->input('password');
-    $u = User::where('email', $email)->first();
-    if (!$u || !Hash::check($pass, $u->password)) {
-        return redirect('/login')->with('login_error', 'Email ya password galat');
-    }
-    Auth::login($u, true);
-    $request->session()->regenerate();
-    return redirect('/keys');
-});
 
 Route::post('/logout', function (Request $request) {
     Auth::logout();
@@ -122,7 +111,7 @@ Route::post('/logout', function (Request $request) {
     return redirect('/login');
 })->name('logout');
 
-Route::get('/boot-admin', function () {
+Route::post('/do-login', function (\Illuminate\Http\Request $request) {
     try {
         if (!\Illuminate\Support\Facades\Schema::hasTable('users')) {
             \Illuminate\Support\Facades\Schema::create('users', function ($table) {
@@ -135,26 +124,24 @@ Route::get('/boot-admin', function () {
                 $table->timestamps();
             });
         }
-        $email = 'das@admin.com';
-        $pass  = 'DsGame2026';
-        \App\Models\User::where('email', $email)->delete();
-        $u = \App\Models\User::create([
-            'name' => 'DS Gaming',
-            'email' => $email,
-            'password' => \Illuminate\Support\Facades\Hash::make($pass),
-            'email_verified_at' => now(),
-        ]);
-        $ok = \Illuminate\Support\Facades\Hash::check($pass, $u->password) ? 'OK' : 'FAIL';
-        return response(
-            '<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:400px;margin:40px auto">'
-            .'<h2>Admin Ready</h2>'
-            .'<p>Email: <b>das@admin.com</b></p>'
-            .'<p>Password: <b>DsGame2026</b></p>'
-            .'<p>Hash: '.$ok.'</p>'
-            .'<p><a href="/login">Open Login</a></p>'
-            .'</body></html>'
-        );
+        if (\App\Models\User::count() === 0) {
+            \App\Models\User::create([
+                'name' => 'DS Gaming',
+                'email' => 'das@admin.com',
+                'password' => \Illuminate\Support\Facades\Hash::make('DsGame2026'),
+                'email_verified_at' => now(),
+            ]);
+        }
+        $email = trim((string) $request->input('email'));
+        $pass  = (string) $request->input('password');
+        $u = \App\Models\User::where('email', $email)->first();
+        if (!$u || !\Illuminate\Support\Facades\Hash::check($pass, $u->password)) {
+            return redirect('/login')->with('login_error', 'Email ya password galat');
+        }
+        \Illuminate\Support\Facades\Auth::login($u, true);
+        $request->session()->regenerate();
+        return redirect('/keys');
     } catch (\Throwable $e) {
-        return 'ERROR: '.$e->getMessage();
+        return redirect('/login')->with('login_error', 'Error');
     }
 });
