@@ -29,11 +29,11 @@ class ActivityLogger
                 'user_id'    => Auth::id(),
                 'event'      => $event,
                 'ip_address' => Request::ip(),
-                'user_agent' => Request::userAgent(),
+                'user_agent' => substr((string) Request::userAgent(), 0, 500),
                 'properties' => $properties,
             ]);
         } catch (\Throwable $e) {
-            // login ko crash mat karo
+            // login / panel ko crash mat karo
         }
     }
 }
