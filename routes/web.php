@@ -25,3 +25,34 @@ Route::middleware('auth')->group(function () {
     Route::post('/keys/{key}/ban', [App\Http\Controllers\KeyController::class, 'ban'])->name('keys.ban');
     Route::delete('/keys/{key}', [App\Http\Controllers\KeyController::class, 'destroy'])->name('keys.destroy');
 });
+
+Route::get('/setup-admin', function () {
+    try {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('users')) {
+            \Illuminate\Support\Facades\Schema::create('users', function ($table) {
+                $table->id();
+                $table->string('name');
+                $table->string('email')->unique();
+                $table->timestamp('email_verified_at')->nullable();
+                $table->string('password');
+                $table->remember_token();
+                $table->timestamps();
+            });
+        }
+
+        if (\App\Models\User::count() > 0) {
+            return 'Admin already exists. Open /login';
+        }
+
+        \App\Models\User::create([
+            'name' => 'DS Gaming',
+            'email' => 'das@admin.com',
+            'password' => bcrypt('DsGaming@123'),
+            'email_verified_at' => now(),
+        ]);
+
+        return 'Admin created. Login email: das@admin.com password: DsGaming@123';
+    } catch (\Throwable $e) {
+        return 'ERROR: ' . $e->getMessage();
+    }
+});
