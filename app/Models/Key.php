@@ -15,6 +15,8 @@ class Key extends Model
         'max_uses',
         'used_count',
         'note',
+        'username',
+        'password',
         'created_by',
     ];
 
@@ -27,18 +29,15 @@ class Key extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    // Check if key is expired
     public function isExpired(): bool
     {
         return $this->expires_at && $this->expires_at->isPast();
     }
 
-    // Generate random key
     public static function generateKey(): string
     {
-        $characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // confusing characters hata diye
+        $characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         $segments = [];
-
         for ($i = 0; $i < 4; $i++) {
             $segment = '';
             for ($j = 0; $j < 4; $j++) {
@@ -46,7 +45,6 @@ class Key extends Model
             }
             $segments[] = $segment;
         }
-
         return implode('-', $segments);
     }
 }

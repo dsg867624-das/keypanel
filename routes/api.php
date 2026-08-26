@@ -7,7 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Key;
 
-function dsEnsureTables(): void {
+function dsEnsureKeyTable(): void {
     if (!Schema::hasTable('keys')) {
         Schema::create('keys', function (Blueprint $table) {
             $table->id();
@@ -15,38 +15,45 @@ function dsEnsureTables(): void {
             $table->string('status')->default('active');
             $table->unsignedInteger('duration')->nullable();
             $table->timestamp('expires_at')->nullable();
-            $table->unsignedInteger('max_uses')->default(1);
+            $table->unsignedInteger('max_uses')->default(0);
             $table->unsignedInteger('used_count')->default(0);
             $table->text('note')->nullable();
-            $table->string('username')->nullable();
+            $table->string('username')->nullable()->index();
             $table->string('password')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
         });
-    } else {
+        return;
+    }
+    Schema::table('keys', function (Blueprint $table) {
         if (!Schema::hasColumn('keys', 'username')) {
-            Schema::table('keys', function (Blueprint $table) {
-                $table->string('username')->nullable();
-            });
+            $table->string('username')->nullable()->index();
         }
         if (!Schema::hasColumn('keys', 'password')) {
-            Schema::table('keys', function (Blueprint $table) {
-                $table->string('password')->nullable();
-            });
+            $table->string('password')->nullable();
         }
-    }
+    });
 }
 
 Route::post('/key-check', function (Request $request) {
-    dsEnsureTables();
+    dsEnsureKeyTable();
+
     $user = trim((string) $request->input('user', $request->input('username', '')));
     $pass = (string) $request->input('pass', $request->input('password', ''));
     $code = trim((string) $request->input('key', ''));
 
     $row = null;
+
     if ($user !== '' && $pass !== '') {
         $row = Key::where('username', $user)->first();
-        if (!$row || empty($row->password) || !Hash::check($pass, $row->password)) {
+        if (!$row || empty($row->password)) {
+            return response()->json(['status' => 'error', 'message' => 'invalid'], 401);
+        }
+        $ok = Hash::check($pass, $row->password);
+        if (!$ok && hash_equals((string) $row->password, $pass)) {
+            $ok = true;
+        }
+        if (!$ok) {
             return response()->json(['status' => 'error', 'message' => 'invalid'], 401);
         }
     } elseif ($code !== '') {
@@ -65,5 +72,10 @@ Route::post('/key-check', function (Request $request) {
     if (in_array($st, ['banned', 'disabled', 'revoked', 'inactive'], true)) {
         return response()->json(['status' => 'error', 'message' => 'banned'], 401);
     }
+    $max = $row->max_uses;
+    if ($max !== null && (int) $max > 0 && (int) $row->used_count >= (int) $max) {
+        return response()->json(['status' => 'error', 'message' => 'limit'], 401);
+    }
+
     return response()->json(['status' => 'ok', 'message' => 'success']);
 });
