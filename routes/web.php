@@ -54,3 +54,7 @@ Route::post('/do-login', function (\Illuminate\Http\Request $request) {
     $request->session()->regenerate();
     return redirect('/keys');
 });
+
+Route::get('/login', function () {
+    return view('auth.login');
+})->middleware('guest')->name('login');
