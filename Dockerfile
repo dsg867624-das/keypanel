@@ -12,4 +12,4 @@ RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framewor
 
 ENV PORT=10000
 EXPOSE 10000
-CMD ["sh", "-c", "touch /app/database/database.sqlite; chmod 666 /app/database/database.sqlite; php artisan migrate --force; exec php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]
+CMD ["sh", "-c", "touch /app/database/database.sqlite; chmod 666 /app/database/database.sqlite; php artisan migrate --force --path=database/migrations/2026_08_21_122812_create_keys_table.php; php artisan migrate --force || true; exec php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]
