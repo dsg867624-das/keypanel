@@ -7,7 +7,18 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Key;
 
-function dsEnsureKeyTable(): void {
+function dsEnsure(): void {
+    if (!Schema::hasTable('users')) {
+        Schema::create('users', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
+            $table->remember_token();
+            $table->timestamps();
+        });
+    }
     if (!Schema::hasTable('keys')) {
         Schema::create('keys', function (Blueprint $table) {
             $table->id();
@@ -23,37 +34,36 @@ function dsEnsureKeyTable(): void {
             $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
         });
-        return;
+    } else {
+        Schema::table('keys', function (Blueprint $table) {
+            if (!Schema::hasColumn('keys', 'username')) {
+                $table->string('username')->nullable()->index();
+            }
+            if (!Schema::hasColumn('keys', 'password')) {
+                $table->string('password')->nullable();
+            }
+        });
     }
-    Schema::table('keys', function (Blueprint $table) {
-        if (!Schema::hasColumn('keys', 'username')) {
-            $table->string('username')->nullable()->index();
-        }
-        if (!Schema::hasColumn('keys', 'password')) {
-            $table->string('password')->nullable();
-        }
-    });
+    if (\App\Models\User::count() === 0) {
+        \App\Models\User::create([
+            'name' => 'DS Gaming',
+            'email' => 'das@admin.com',
+            'password' => Hash::make('8810737340@@##$$DSGAMING'),
+            'email_verified_at' => now(),
+        ]);
+    }
 }
 
 Route::post('/key-check', function (Request $request) {
-    dsEnsureKeyTable();
-
+    dsEnsure();
     $user = trim((string) $request->input('user', $request->input('username', '')));
     $pass = (string) $request->input('pass', $request->input('password', ''));
     $code = trim((string) $request->input('key', ''));
-
     $row = null;
 
     if ($user !== '' && $pass !== '') {
         $row = Key::where('username', $user)->first();
-        if (!$row || empty($row->password)) {
-            return response()->json(['status' => 'error', 'message' => 'invalid'], 401);
-        }
-        $ok = Hash::check($pass, $row->password);
-        if (!$ok && hash_equals((string) $row->password, $pass)) {
-            $ok = true;
-        }
-        if (!$ok) {
+        if (!$row || empty($row->password) || !Hash::check($pass, $row->password)) {
             return response()->json(['status' => 'error', 'message' => 'invalid'], 401);
         }
     } elseif ($code !== '') {
@@ -73,9 +83,8 @@ Route::post('/key-check', function (Request $request) {
         return response()->json(['status' => 'error', 'message' => 'banned'], 401);
     }
     $max = $row->max_uses;
-    if ($max !== null && (int) $max > 0 && (int) $row->used_count >= (int) $max) {
+    if ($max !== null && (int)$max > 0 && (int)$row->used_count >= (int)$max) {
         return response()->json(['status' => 'error', 'message' => 'limit'], 401);
     }
-
     return response()->json(['status' => 'ok', 'message' => 'success']);
 });
