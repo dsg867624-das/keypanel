@@ -77,74 +77,6 @@ Route::middleware('auth')->group(function () {
 // ---- Admin boot (ek baar) ----
 
 // ---- Clean login (HTML only, no blade) ----
-Route::get('/login', function () {
-    $err = session('login_error', '');
-    $box = $err !== ''
-        ? '<div style="background:#3b1111;color:#fca5a5;padding:10px;border-radius:8px;margin-bottom:12px">'.htmlspecialchars($err).'</div>'
-        : '';
-    return response(
-        '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-        .'<title>Login - DS Gaming</title></head>'
-        .'<body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f0f0f;font-family:system-ui,sans-serif">'
-        .'<div style="background:#1a1a1a;color:#fff;padding:28px;border-radius:14px;width:92%;max-width:360px;box-shadow:0 8px 30px rgba(0,0,0,.4)">'
-        .'<h1 style="margin:0 0 6px;text-align:center;font-size:22px">DS Gaming</h1>'
-        .'<p style="margin:0 0 20px;text-align:center;color:#888;font-size:13px">Admin Panel</p>'
-        .$box
-        .'<form method="POST" action="/do-login">'
-        .'<input type="hidden" name="_token" value="'.csrf_token().'">'
-        .'<label style="font-size:12px;color:#aaa">Email</label>'
-        .'<input type="email" name="email" required value="das@admin.com" '
-        .'style="width:100%;box-sizing:border-box;margin:6px 0 14px;padding:11px;border-radius:8px;border:1px solid #333;background:#111;color:#fff">'
-        .'<label style="font-size:12px;color:#aaa">Password</label>'
-        .'<input type="password" name="password" required placeholder="Password" '
-        .'style="width:100%;box-sizing:border-box;margin:6px 0 18px;padding:11px;border-radius:8px;border:1px solid #333;background:#111;color:#fff">'
-        .'<button type="submit" style="width:100%;padding:12px;border:0;border-radius:8px;background:#2563eb;color:#fff;font-weight:600;font-size:15px">Sign in</button>'
-        .'</form></div></body></html>'
-    );
-})->middleware('guest')->name('login');
-
-
-Route::post('/logout', function (Request $request) {
-    Auth::logout();
-    $request->session()->invalidate();
-    $request->session()->regenerateToken();
-    return redirect('/login');
-})->name('logout');
-
-Route::post('/do-login', function (\Illuminate\Http\Request $request) {
-    try {
-        if (!\Illuminate\Support\Facades\Schema::hasTable('users')) {
-            \Illuminate\Support\Facades\Schema::create('users', function ($table) {
-                $table->id();
-                $table->string('name');
-                $table->string('email')->unique();
-                $table->timestamp('email_verified_at')->nullable();
-                $table->string('password');
-                $table->remember_token();
-                $table->timestamps();
-            });
-        }
-        if (\App\Models\User::count() === 0) {
-            \App\Models\User::create([
-                'name' => 'DS Gaming',
-                'email' => 'das@admin.com',
-                'password' => \Illuminate\Support\Facades\Hash::make('DsGame2026'),
-                'email_verified_at' => now(),
-            ]);
-        }
-        $email = trim((string) $request->input('email'));
-        $pass  = (string) $request->input('password');
-        $u = \App\Models\User::where('email', $email)->first();
-        if (!$u || !\Illuminate\Support\Facades\Hash::check($pass, $u->password)) {
-            return redirect('/login')->with('login_error', 'Email ya password galat');
-        }
-        \Illuminate\Support\Facades\Auth::login($u, true);
-        $request->session()->regenerate();
-        return view('dashboard');
-    } catch (\Throwable $e) {
-        return redirect('/login')->with('login_error', 'Error');
-    }
-});
 
 // Browser se seedha logout (GET allowed)
 Route::get('/exit', function (\Illuminate\Http\Request $request) {
@@ -160,3 +92,93 @@ Route::match(['get', 'post'], '/logout', function (\Illuminate\Http\Request $req
     $request->session()->regenerateToken();
     return redirect('/login');
 })->name('logout');
+
+Route::get('/login', function () {
+    if (auth()->check()) {
+        return redirect('/dashboard');
+    }
+    $err = session('login_error', '');
+    $box = $err !== ''
+        ? '<div class="err">'.htmlspecialchars($err).'</div>'
+        : '';
+    return response('<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DS Gaming Login</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap");
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  font-family:Outfit,system-ui,sans-serif;color:#fff;
+  background:#050505;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%,rgba(220,38,38,.35),transparent),
+    radial-gradient(ellipse 60% 40% at 100% 100%,rgba(127,29,29,.2),transparent),
+    radial-gradient(ellipse 50% 30% at 0% 80%,rgba(69,10,10,.25),transparent);
+}
+.wrap{width:92%;max-width:420px;position:relative;z-index:1}
+.brand{text-align:center;margin-bottom:32px}
+.brand .logo{
+  width:64px;height:64px;margin:0 auto 16px;border-radius:18px;
+  background:linear-gradient(135deg,#ef4444,#7f1d1d);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;font-weight:800;box-shadow:0 12px 40px rgba(239,68,68,.45);
+}
+.brand h1{font-size:26px;font-weight:800;letter-spacing:.08em}
+.brand h1 b{color:#f87171}
+.brand p{color:#737373;font-size:13px;margin-top:8px;font-weight:400}
+.card{
+  background:rgba(15,15,15,.85);backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.08);border-radius:24px;
+  padding:32px 28px;
+  box-shadow:0 25px 80px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06);
+}
+.err{
+  background:rgba(127,29,29,.4);border:1px solid #991b1b;color:#fecaca;
+  padding:12px 14px;border-radius:12px;margin-bottom:18px;font-size:13px;
+}
+label{display:block;font-size:11px;color:#a3a3a3;margin-bottom:8px;
+  text-transform:uppercase;letter-spacing:.1em;font-weight:600}
+.field{margin-bottom:18px}
+input{
+  width:100%;padding:14px 16px;border-radius:14px;
+  border:1px solid #262626;background:#0a0a0a;color:#fff;
+  font-size:15px;font-family:inherit;outline:none;transition:.2s;
+}
+input:focus{border-color:#ef4444;box-shadow:0 0 0 4px rgba(239,68,68,.15)}
+input::placeholder{color:#525252}
+button{
+  width:100%;padding:15px;border:0;border-radius:14px;margin-top:8px;
+  font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;color:#fff;
+  background:linear-gradient(180deg,#f87171 0%,#dc2626 45%,#991b1b 100%);
+  box-shadow:0 10px 30px rgba(220,38,38,.4),inset 0 1px 0 rgba(255,255,255,.2);
+  transition:.15s;
+}
+button:hover{transform:translateY(-1px);filter:brightness(1.08)}
+button:active{transform:translateY(0)}
+.foot{text-align:center;margin-top:24px;font-size:11px;color:#404040;letter-spacing:.04em}
+</style></head><body>
+<div class="wrap">
+  <div class="brand">
+    <div class="logo">DS</div>
+    <h1><b>DS</b> GAMING</h1>
+    <p>Premium Admin Access</p>
+  </div>
+  <div class="card">'.$box.'
+    <form method="POST" action="/do-login">
+      <input type="hidden" name="_token" value="'.csrf_token().'">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" name="email" required value="das@admin.com" autocomplete="username" placeholder="admin@email.com">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" name="password" required placeholder="Enter password" autocomplete="current-password">
+      </div>
+      <button type="submit">Sign In</button>
+    </form>
+  </div>
+  <div class="foot">SECURE PANEL · DS GAMING</div>
+</div>
+</body></html>');
+})->name('login');
