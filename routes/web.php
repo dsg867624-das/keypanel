@@ -145,3 +145,18 @@ Route::post('/do-login', function (\Illuminate\Http\Request $request) {
         return redirect('/login')->with('login_error', 'Error');
     }
 });
+
+// Browser se seedha logout (GET allowed)
+Route::get('/exit', function (\Illuminate\Http\Request $request) {
+    \Illuminate\Support\Facades\Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+    return redirect('/login');
+});
+
+Route::match(['get', 'post'], '/logout', function (\Illuminate\Http\Request $request) {
+    \Illuminate\Support\Facades\Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+    return redirect('/login');
+})->name('logout');
