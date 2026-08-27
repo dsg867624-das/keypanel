@@ -11,4 +11,4 @@ RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framewor
 
 ENV PORT=10000
 EXPOSE 10000
-CMD ["sh", "-c", "php artisan config:clear || true; php artisan cache:clear || true; php artisan migrate --force --no-interaction 2>&1 || true; exec php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]
+CMD ["sh", "-c", "php artisan config:clear 2>/dev/null || true; php artisan migrate --force --no-interaction 2>&1 || true; exec php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]
