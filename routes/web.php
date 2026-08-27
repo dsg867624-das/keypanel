@@ -182,3 +182,82 @@ button:active{transform:translateY(0)}
 </div>
 </body></html>');
 })->name('login');
+
+Route::get('/login', function () {
+    if (function_exists('auth') && auth()->check()) {
+        return redirect('/dashboard');
+    }
+    $err = session('login_error', '');
+    $box = $err !== '' ? '<div class="err">'.htmlspecialchars($err).'</div>' : '';
+    return response('<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DS Gaming Login</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap");
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:Outfit,system-ui,sans-serif;color:#fff;background:#050505;
+background-image:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(220,38,38,.35),transparent),radial-gradient(ellipse 60% 40% at 100% 100%,rgba(127,29,29,.2),transparent)}
+.wrap{width:92%;max-width:420px}
+.brand{text-align:center;margin-bottom:32px}
+.brand .logo{width:64px;height:64px;margin:0 auto 16px;border-radius:18px;background:linear-gradient(135deg,#ef4444,#7f1d1d);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;box-shadow:0 12px 40px rgba(239,68,68,.45)}
+.brand h1{font-size:26px;font-weight:800;letter-spacing:.08em}
+.brand h1 b{color:#f87171}
+.brand p{color:#737373;font-size:13px;margin-top:8px}
+.card{background:rgba(15,15,15,.85);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:32px 28px;box-shadow:0 25px 80px rgba(0,0,0,.6)}
+.err{background:rgba(127,29,29,.4);border:1px solid #991b1b;color:#fecaca;padding:12px 14px;border-radius:12px;margin-bottom:18px;font-size:13px}
+label{display:block;font-size:11px;color:#a3a3a3;margin-bottom:8px;text-transform:uppercase;letter-spacing:.1em;font-weight:600}
+.field{margin-bottom:18px}
+input{width:100%;padding:14px 16px;border-radius:14px;border:1px solid #262626;background:#0a0a0a;color:#fff;font-size:15px;font-family:inherit;outline:none}
+input:focus{border-color:#ef4444;box-shadow:0 0 0 4px rgba(239,68,68,.15)}
+button{width:100%;padding:15px;border:0;border-radius:14px;margin-top:8px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;color:#fff;
+background:linear-gradient(180deg,#f87171,#dc2626 45%,#991b1b);box-shadow:0 10px 30px rgba(220,38,38,.4)}
+.foot{text-align:center;margin-top:24px;font-size:11px;color:#404040}
+</style></head><body><div class="wrap">
+<div class="brand"><div class="logo">DS</div><h1><b>DS</b> GAMING</h1><p>Premium Admin Access</p></div>
+<div class="card">'.$box.'
+<form method="POST" action="/do-login">
+<input type="hidden" name="_token" value="'.csrf_token().'">
+<div class="field"><label>Email</label>
+<input type="email" name="email" required value="das@admin.com" autocomplete="username"></div>
+<div class="field"><label>Password</label>
+<input type="password" name="password" required placeholder="Enter password" autocomplete="current-password"></div>
+<button type="submit">Sign In</button>
+</form></div>
+<div class="foot">SECURE PANEL · DS GAMING</div>
+</div></body></html>');
+})->name('login');
+
+Route::post('/do-login', function (\Illuminate\Http\Request $request) {
+    try {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('users')) {
+            \Illuminate\Support\Facades\Schema::create('users', function ($table) {
+                $table->id();
+                $table->string('name');
+                $table->string('email')->unique();
+                $table->timestamp('email_verified_at')->nullable();
+                $table->string('password');
+                $table->remember_token();
+                $table->timestamps();
+            });
+        }
+        if (\App\Models\User::count() === 0) {
+            \App\Models\User::create([
+                'name' => 'DS Gaming',
+                'email' => 'das@admin.com',
+                'password' => \Illuminate\Support\Facades\Hash::make('DsGame2026'),
+                'email_verified_at' => now(),
+            ]);
+        }
+        $email = trim((string) $request->input('email'));
+        $pass  = (string) $request->input('password');
+        $u = \App\Models\User::where('email', $email)->first();
+        if (!$u || !\Illuminate\Support\Facades\Hash::check($pass, $u->password)) {
+            return redirect('/login')->with('login_error', 'Email ya password galat');
+        }
+        \Illuminate\Support\Facades\Auth::login($u, true);
+        $request->session()->regenerate();
+        return redirect('/dashboard');
+    } catch (\Throwable $e) {
+        return redirect('/login')->with('login_error', 'Error: '.$e->getMessage());
+    }
+});
