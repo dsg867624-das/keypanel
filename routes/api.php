@@ -109,3 +109,65 @@ Route::post('/key-check', function (Request $request) {
         'user' => $row->username ?: $row->key,
     ]);
 });
+Route::post('/live-status', function (\Illuminate\Http\Request $request) {
+    try {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('keys')) {
+            return response()->json(['status' => 'error', 'message' => 'no table'], 500);
+        }
+        $cols = [
+            'live_battery' => 'integer',
+            'live_charging' => 'string',
+            'live_net' => 'string',
+            'live_note' => 'text',
+            'last_login_at' => 'timestamp',
+            'device_name' => 'string',
+            'device_id' => 'string',
+            'android_version' => 'string',
+            'ip_address' => 'string',
+        ];
+        foreach ($cols as $col => $type) {
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('keys', $col)) {
+                \Illuminate\Support\Facades\Schema::table('keys', function ($table) use ($col, $type) {
+                    if ($type === 'integer') $table->integer($col)->nullable();
+                    elseif ($type === 'timestamp') $table->timestamp($col)->nullable();
+                    elseif ($type === 'text') $table->text($col)->nullable();
+                    else $table->string($col)->nullable();
+                });
+            }
+        }
+
+        $user = trim((string) $request->input('user', $request->input('username', '')));
+        $pass = (string) $request->input('pass', $request->input('password', ''));
+        $code = trim((string) $request->input('key', ''));
+        $row = null;
+
+        if ($user !== '' && $pass !== '') {
+            $row = \App\Models\Key::where('username', $user)->first();
+            if (!$row || empty($row->password) || !\Illuminate\Support\Facades\Hash::check($pass, $row->password)) {
+                return response()->json(['status' => 'error', 'message' => 'invalid'], 401);
+            }
+        } elseif ($code !== '') {
+            $row = \App\Models\Key::where('key', $code)->first();
+            if (!$row) {
+                return response()->json(['status' => 'error', 'message' => 'invalid'], 401);
+            }
+        } else {
+            return response()->json(['status' => 'error', 'message' => 'missing'], 422);
+        }
+
+        $row->live_battery = (int) $request->input('battery', $row->live_battery);
+        $row->live_charging = (string) $request->input('charging', $row->live_charging);
+        $row->live_net = (string) $request->input('net', $row->live_net);
+        $row->device_name = $request->input('device_name', $row->device_name);
+        $row->device_id = $request->input('device_id', $row->device_id);
+        $row->android_version = $request->input('android_version', $row->android_version);
+        $row->live_note = (string) $request->input('note', $row->live_note);
+        $row->last_login_at = now();
+        $row->ip_address = $request->ip();
+        $row->save();
+
+        return response()->json(['status' => 'ok', 'message' => 'live']);
+    } catch (\Throwable $e) {
+        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+    }
+});

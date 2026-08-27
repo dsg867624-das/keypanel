@@ -25,6 +25,10 @@ class Key extends Model
         'app_version',
         'ip_address',
         'last_login_at',
+        'live_battery',
+        'live_charging',
+        'live_net',
+        'live_note',
         'created_by',
     ];
 
