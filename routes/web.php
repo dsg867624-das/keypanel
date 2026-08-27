@@ -13,7 +13,7 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    return redirect('/keys');
+    return view('dashboard');
 })->middleware(['auth'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -140,7 +140,7 @@ Route::post('/do-login', function (\Illuminate\Http\Request $request) {
         }
         \Illuminate\Support\Facades\Auth::login($u, true);
         $request->session()->regenerate();
-        return redirect('/keys');
+        return view('dashboard');
     } catch (\Throwable $e) {
         return redirect('/login')->with('login_error', 'Error');
     }

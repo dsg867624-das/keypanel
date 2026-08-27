@@ -1,64 +1,38 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Generate Keys') }}
-        </h2>
-    </x-slot>
+@extends('layouts.app')
 
-    <div class="py-12">
-        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
+@section('content')
+<div class="max-w-lg mx-auto">
+    <h1 class="text-2xl font-bold mb-2">Generate Keys</h1>
+    <p class="text-zinc-500 text-sm mb-6">Bulk create · max uses 0 = unlimited</p>
 
-                    <form method="POST" action="{{ route('keys.store') }}">
-                        @csrf
-
-                        <!-- Quantity -->
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">How many keys?</label>
-                            <input type="number" name="quantity" value="1" min="0" max="999999" required
-                                   class="w-full border-gray-300 rounded-md shadow-sm">
-                            <p class="text-xs text-gray-500 mt-1">Maximum 100 keys at a time</p>
-                        </div>
-
-                        <!-- Duration -->
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-                            <select name="duration" class="w-full border-gray-300 rounded-md shadow-sm">
-                                <option value="">Lifetime (No Expiry)</option>
-                                <option value="1">1 Day</option>
-                                <option value="7">7 Days</option>
-                                <option value="30">30 Days</option>
-                                <option value="90">90 Days</option>
-                                <option value="365">1 Year</option>
-                            </select>
-                        </div>
-
-                        <!-- Max Uses -->
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Max Uses</label>
-                            <input type="number" name="max_uses" value="1" min="0" max="999999" required
-                                   class="w-full border-gray-300 rounded-md shadow-sm">
-                            <p class="text-xs text-gray-500 mt-1">0 = unlimited, ya apna number</p>
-                        </div>
-
-                        <!-- Note -->
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Note (Optional)</label>
-                            <textarea name="note" rows="2" class="w-full border-gray-300 rounded-md shadow-sm"
-                                      placeholder="e.g. For customer XYZ"></textarea>
-                        </div>
-
-                        <div class="flex items-center gap-4">
-                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md">
-                                Generate Keys
-                            </button>
-                            <a href="{{ route('keys.index') }}" class="text-gray-600 hover:underline">Cancel</a>
-                        </div>
-                    </form>
-
-                </div>
-            </div>
+    <form method="POST" action="{{ route('keys.store') }}" class="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 space-y-5">
+        @csrf
+        <div>
+            <label class="block text-sm text-zinc-400 mb-1">Quantity</label>
+            <input type="number" name="quantity" value="1" min="1" max="500"
+                   class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-red-600">
         </div>
-    </div>
-</x-app-layout>
+        <div>
+            <label class="block text-sm text-zinc-400 mb-1">Duration (days, empty = lifetime)</label>
+            <input type="number" name="duration" min="0"
+                   class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-red-600"
+                   placeholder="Optional">
+        </div>
+        <div>
+            <label class="block text-sm text-zinc-400 mb-1">Max uses (0 = unlimited)</label>
+            <input type="number" name="max_uses" value="0" min="0" max="999999"
+                   class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-red-600">
+        </div>
+        <div>
+            <label class="block text-sm text-zinc-400 mb-1">Note (optional)</label>
+            <input type="text" name="note"
+                   class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-red-600"
+                   placeholder="Batch name...">
+        </div>
+        <button type="submit" class="w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 font-semibold text-sm">
+            Generate
+        </button>
+        <a href="{{ route('keys.index') }}" class="block text-center text-sm text-zinc-500 hover:text-zinc-300">← Back to keys</a>
+    </form>
+</div>
+@endsection
